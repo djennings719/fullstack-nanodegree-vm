@@ -8,6 +8,7 @@
 -- these lines here.
 
 --drop table players if it exists
+--cascade our drop since no matches should exist if there are no players
 drop table if exists players cascade;
 
 --create the players table
@@ -24,3 +25,19 @@ create table matches(
 	id2 integer references players(id),
 	winner integer,
 	primary key(id1, id2));
+
+--create a view for player_standings
+create or replace view player_standings_view
+  as select players.id,
+            players.name,
+            count(matches.winner) as wins,
+            ((select count(*)
+              from matches
+              where players.id = matches.id1) +
+            (select count(*)
+              from matches
+              where players.id = matches.id2)) as matches_played
+              from players
+              left join matches
+              on players.id = matches.winner
+              group by players.id;
